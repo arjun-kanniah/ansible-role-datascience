@@ -4,17 +4,42 @@
     id: 7fa2af80
     state: absent
 
-- name: Setup appropriate CUDA packages for Ubuntu WSL & Install CUDA
-  ansible.builtin.shell: |
-    'wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin'
-    'mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600'
-    'apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/3bf863cc.pub'
-    "add-apt-repository 'deb https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/ /'"
-    'apt-get update'
-    'apt-get -y install cuda'
-  args:
-    executable: /bin/bash
-    chdir: /home/arjunkanniah
+# - name: Setup appropriate CUDA packages for Ubuntu WSL & Install CUDA
+#   ansible.builtin.shell: |
+#     'wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin'
+#     'mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600'
+#     'apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/3bf863cc.pub'
+#     "add-apt-repository 'deb https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/ /'"
+#     'apt-get update'
+#     'apt-get -y install cuda'
+#   args:
+#     executable: /bin/bash
+#     chdir: /home/arjunkanniah
+
+- name: Download CUDA repo pin
+  ansible.builtin.get_url:
+    url: "https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin"
+    dest: /etc/apt/preferences.d/cuda-repository-pin-600
+    mode: '0644'
+    force: true
+
+- name: Download CUDA GPG key
+  ansible.builtin.get_url:
+    url: "https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/3bf863cc.pub"
+    dest: /etc/apt/trusted.gpg.d/cuda-ubuntu-wsl.asc
+    mode: '0644'
+    force: true
+
+- name:  Add CUDA on WSL repository
+  apt_repository:
+    repo:  "deb [signed-by=/etc/apt/trusted.gpg.d/cuda-ubuntu-wsl.asc] https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64"
+    state: present
+    update_cache: yes
+
+- name:  Install CUDA
+  package:
+    name:  cuda
+    state: present
 
 - name: Clone CUDA verification script repo
   ansible.builtin.git:
