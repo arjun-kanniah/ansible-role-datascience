@@ -1,0 +1,78 @@
+---
+- name: Ensure old GPG key for CUDA is removed
+  ansible.builtin.apt_key:
+    id: 7fa2af80
+    state: absent
+
+- name: Setup appropriate CUDA packages for Ubuntu WSL & Install CUDA
+  ansible.builtin.shell: |
+    'wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin'
+    'mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600'
+    'apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/3bf863cc.pub'
+    "add-apt-repository 'deb https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/ /'"
+    'apt-get update'
+    'apt-get -y install cuda'
+
+- name: Clone CUDA verification script repo
+  ansible.builtin.git:
+    repo: 'https://foosball.example.org/path/to/repo.git'
+    dest: '{{ jupyter_user_path }}/repos'
+    version: master
+
+- name: Install JupyterLab and its dependencies
+  ansible.builtin.pip:
+    name: 
+      - jupyterlab
+      - ipywidgets
+    state: latest
+    executable: pip3
+
+- name: Enable the ipywidgets extension
+  ansible.builtin.command: >
+        jupyter nbextension enable --py --sys-prefix widgetsnbextension
+
+- name: Delete existing JupyterLab config file
+  ansible.builtin.file:
+    path: "{{ jupyter_config_file }}"
+    state: absent
+
+- name: Generate JupyterLab config
+  ansible.builtin.command: >
+        jupyter lab --generate-config
+
+- name: Edit JupyterLab config with custom settings
+  ansible.builtin.lineinfile:
+    path: '{{ jupyter_config_file }}'
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  loop:
+    - regexp: 'c.NotebookApp.open_browser'
+      line: 'c.NotebookApp.open_browser = False'
+
+- name: Ensure notebook directory exists
+  file:
+    path: "{{ jupyter_notebook_dir }}"
+    state: directory
+
+- name: Case insensitive password string match
+  ansible.builtin.expect:
+    command: jupyter notebook password
+    responses:
+      (?i)password: '{{ jupyter_passwd }}'
+  no_log: true
+
+- name: Put jupyter systemd service file into place
+  ansible.builtin.template:
+    src: jupyter.service.j2
+    dest: '/etc/systemd/system/jupyter.service'
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and start the Jupyter systemd job
+  ansible.builtin.systemd:
+    enabled: yes
+    state: started
+    name: 'jupyter.service'
+    scope: system
+    daemon_reload: yes

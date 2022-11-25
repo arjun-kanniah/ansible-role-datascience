@@ -1,0 +1,15 @@
+[Unit]
+Description=Jupyter Notebook
+
+[Service]
+Type=simple
+PIDFile=/run/jupyter.pid
+ExecStart=/bin/bash -c ". jupyter-notebook --notebook-dir={{ jupyter_user_path }}/jupyter-notebooks"
+User={{ jupyter_user }}
+Group={{ jupyter_user }}
+WorkingDirectory={{ jupyter_user_path }}/jupyter-notebooks
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

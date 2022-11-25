@@ -1,0 +1,8 @@
+---
+# defaults file for ansible-role-datascience
+
+jupyter_user:
+jupyter_user_path:
+jupyter_config_file: '{{ jupyter_user_path }}/.jupyter/jupyter_notebook_config.py'
+jupyter_passwd: 'Pa$$w0rD'
+jupyter_notebook_dir: '{{ jupyter_user_path }}/jupyter-notebooks'
