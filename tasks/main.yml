@@ -27,6 +27,12 @@
   ansible.builtin.apt:
     deb: "https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda-repo-wsl-ubuntu-11-8-local_11.8.0-1_amd64.deb"
 
+- name: Add CUDA repo public key
+  ansible.builtin.apt_key:
+    id: 3bf863cc
+    url: https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/3bf863cc.pub
+    state: present
+
 - name: Update apt packages
   ansible.builtin.apt:
     update_cache: yes
